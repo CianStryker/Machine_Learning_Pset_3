@@ -1,0 +1,141 @@
+---
+title: "Problem Set 3"
+author: "Cian Stryker"
+date: "10/16/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(AER)
+library(fastDummies)
+```
+
+
+# Concept Questions
+
+#### Question 1
+
+\hfill\break
+
+You should standardize your variables for Ridge, Lasso, Linear Regression, KNN, PCR, and PLS. You do not need to standardize your variables when doing a logistic regression. 
+
+#### Question 2
+
+\hfill\break
+
+We can conclude that we should choose Model B because the AUC (Area Under The Curve) is higher and, generally speaking, when the AUC is higher the model is bettter at predicting 0s as 0s and 1s and 1s. So since model B has a higher AUC than Model A, we should choose Model B because it will have fewer false positives. 
+
+#### Question 3
+
+\hfill\break
+
+If we run a Lasso with a lambda of 0 the model is equivalent to an OLS regression. As lambda approaches infinity, however, the shrinkage penalty grows and coefficients will be reduced to zero, removing them from the model itself. 
+
+#### Question 4
+
+\hfill\break
+
+When we have data where the outcome variable is strongly coorelated with our predictors, Ridge and Lasso will likely outperfrom PCR. PCR does not take the outcome variable into account when deciding principle components so it may generate components that explain the most variance overall, but with little relationship to our outcome variable. Similarly, it may have dropped predictors that are highly coorelated to the outcome variable in its first step. 
+
+#### Question 5
+
+\hfill\break
+
+Yes I would conlcude that X2 will receive more weight in the PLS regression because it is more highly correlated to our outcocme variable Y. PLS takes coorelation of variables to the outcome variable into account when allocating weight. 
+
+#### Question 6
+
+\hfill\break
+
+No I would not necessarily conclude that X2 will recieve more weight in thhe PCR regression. PCR does not take the realtionship of variables to the outcome variable Y into account when allocating weight, therefore, just because X2 has a higher coorelation to Y, PCR will not take that into account. 
+
+#### Question 7
+
+\hfill\break
+
+A polynomial regression imposes a global structure to data that doesn't necessarily take into account the differences between certain parts of the data range. A step function might be more appropriate for this sitaution because it divides the range of data into different bins. In the situation give, we could create a bin that shows years 10-11 and 11-12 separatley which may show if that 12th year really does have a signifigant impact. 
+
+
+#### Question 8
+
+\hfill\break
+
+The number of knots used in a regression spline is often determiend by using cross validation to try different K values and then choose the number with the best scores. 
+
+#### Question 9
+
+\hfill\break
+
+Natural regression splines add additional constraints that at the tails of a model the model must be linear, which decreases the variance at the tails. In polynomial regressions the variance at the tails is often very high because data is limited. Natural regression splines addresses this issue. 
+
+#### Question 10
+
+\hfill\break
+
+For smoothing splines, if the smoothing parameter is 0 the function will be very rough, but if the parameter is equal to infinite it will become very smooth. 
+
+# Data Questions
+
+#### Question 1 
+
+\hfill\break
+
+```{r Data Loading and q1}
+
+data("STAR")
+
+data_1 <- STAR %>%
+  select(-c(birth, readk, read1, read2, mathk, math1, math2))
+
+q1 <- ncol(data_1)
+
+data_2 <- data_1 %>%
+  drop_na()
+
+first <- data_1 %>%
+  nrow()
+
+second <- data_2 %>%
+  nrow()
+
+q2 <- first - second
+
+# sapply(data, class)
+
+data_3 <- data_2 %>%
+  mutate_at(vars(read3, math3, experiencek, experience1, experience2, experience3), ~as.numeric(as.integer(.)))
+
+data_4 <- data_3 %>%
+  dummy_cols(select_columns = NULL, remove_selected_columns = TRUE, remove_first_dummy = TRUE)
+
+variance <- data.frame(var = sapply(data_4, var)) %>%
+  filter(var < 0.05)
+
+low_var <- data.frame(variables = rownames(variance))
+
+# variance2 <- data.frame(var = sapply(data_4, var)) %>%
+#  filter(var >= 0.05) 
+
+# high_var <- data.frame(variables = rownames(variance2))
+
+final_data <- data_4 %>%
+  select(-low_var[,1])
+```
+
+a.) There are 40 predictors in the data set. 
+
+b.) 9230 observations were missing values. 
+
+c.) 34 variables are categorical variables, while six are numeric. 
+
+d.) 498 variables have variance less than 0.05. 
+
+```{r Question 2}
+
+
+
+```
+
