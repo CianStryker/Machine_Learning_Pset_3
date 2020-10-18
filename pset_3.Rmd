@@ -11,6 +11,12 @@ knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(AER)
 library(fastDummies)
+library(ISLR)
+library(pls)
+library(tree)
+library(ggthemes)
+library(janitor)
+
 ```
 
 
@@ -26,7 +32,7 @@ You should standardize your variables for Ridge, Lasso, Linear Regression, KNN, 
 
 \hfill\break
 
-We can conclude that we should choose Model B because the AUC (Area Under The Curve) is higher and, generally speaking, when the AUC is higher the model is bettter at predicting 0s as 0s and 1s and 1s. So since model B has a higher AUC than Model A, we should choose Model B because it will have fewer false positives. 
+We can conclude that we should choose Model B because the AUC (Area Under The Curve) is higher and, generally speaking, when the AUC is higher the model is better at predicting 0s as 0s and 1s and 1s. So since model B has a higher AUC than Model A, we should choose Model B because it will have fewer false positives. 
 
 #### Question 3
 
@@ -38,32 +44,32 @@ If we run a Lasso with a lambda of 0 the model is equivalent to an OLS regressio
 
 \hfill\break
 
-When we have data where the outcome variable is strongly coorelated with our predictors, Ridge and Lasso will likely outperfrom PCR. PCR does not take the outcome variable into account when deciding principle components so it may generate components that explain the most variance overall, but with little relationship to our outcome variable. Similarly, it may have dropped predictors that are highly coorelated to the outcome variable in its first step. 
+When we have data where the outcome variable is strongly correlated with our predictors, Ridge and Lasso will likely outperform PCR. PCR does not take the outcome variable into account when deciding principle components so it may generate components that explain the most variance overall, but with little relationship to our outcome variable. Similarly, it may have dropped predictors that are highly correlated to the outcome variable in its first step. 
 
 #### Question 5
 
 \hfill\break
 
-Yes I would conlcude that X2 will receive more weight in the PLS regression because it is more highly correlated to our outcocme variable Y. PLS takes coorelation of variables to the outcome variable into account when allocating weight. 
+Yes I would conclude that X2 will receive more weight in the PLS regression because it is more highly correlated to our outcome variable Y. PLS takes correlation of variables to the outcome variable into account when allocating weight. 
 
 #### Question 6
 
 \hfill\break
 
-No I would not necessarily conclude that X2 will recieve more weight in thhe PCR regression. PCR does not take the realtionship of variables to the outcome variable Y into account when allocating weight, therefore, just because X2 has a higher coorelation to Y, PCR will not take that into account. 
+No I would not necessarily conclude that X2 will receive more weight in the PCR regression. PCR does not take the relationship of variables to the outcome variable Y into account when allocating weight, therefore, just because X2 has a higher correlation to Y, PCR will not take that into account. 
 
 #### Question 7
 
 \hfill\break
 
-A polynomial regression imposes a global structure to data that doesn't necessarily take into account the differences between certain parts of the data range. A step function might be more appropriate for this sitaution because it divides the range of data into different bins. In the situation give, we could create a bin that shows years 10-11 and 11-12 separatley which may show if that 12th year really does have a signifigant impact. 
+A polynomial regression imposes a global structure to data that doesn't necessarily take into account the differences between certain parts of the data range. A step function might be more appropriate for this situation because it divides the range of data into different bins. In the situation give, we could create a bin that shows years 10-11 and 11-12 separately which may show if that 12the year really does have a significant impact. 
 
 
 #### Question 8
 
 \hfill\break
 
-The number of knots used in a regression spline is often determiend by using cross validation to try different K values and then choose the number with the best scores. 
+The number of knots used in a regression spline is often determined by using cross validation to try different K values and then choose the number with the best scores. 
 
 #### Question 9
 
@@ -79,11 +85,11 @@ For smoothing splines, if the smoothing parameter is 0 the function will be very
 
 # Data Questions
 
-#### Question 1 
+#### 1.) 
 
 \hfill\break
 
-```{r Data Loading and q1}
+```{r Data Loading and q1, echo=FALSE}
 
 data("STAR")
 
@@ -103,26 +109,51 @@ second <- data_2 %>%
 
 q2 <- first - second
 
-# sapply(data, class)
+# sapply(data_2, class)
 
-data_3 <- data_2 %>%
-  mutate_at(vars(read3, math3, experiencek, experience1, experience2, experience3), ~as.numeric(as.integer(.)))
+for (i in 40:1) {
+  if (is.factor(data_2[,i])) {
+    for (j in unique(data_2[,i])) {
+      new_col             <- paste(colnames(data_2)[i], j, sep = "_")
+      data_2[,new_col] <- as.numeric(data_2[,i] == j) 
+    }
+    data_2       <- data_2[,-i]     
+  } else if (typeof(data_2[,i]) == "integer") {
+    data_2[,i]   <- as.numeric(as.character(data_2[,i]))
+  } 
+}
 
-data_4 <- data_3 %>%
-  dummy_cols(select_columns = NULL, remove_selected_columns = TRUE, remove_first_dummy = TRUE)
+q4_predictors <- ncol(data_2)
+q4_observations <- nrow(data_2)
 
-variance <- data.frame(var = sapply(data_4, var)) %>%
-  filter(var < 0.05)
+# for (col_num in 1:ncol(data_2)) {
+#   if (var(data_2[,col_num]) < 0.05) {
+#     print(colnames(data_2)[col_num])
+#     print(var(data_2[,col_num]))
+#   }
+# }
 
-low_var <- data.frame(variables = rownames(variance))
+for (col_num in ncol(data_2):1) {
+  if (var(data_2[,col_num]) < 0.05) {
+    data_2       <- data_2[,-col_num]
+  }
+}
 
-# variance2 <- data.frame(var = sapply(data_4, var)) %>%
-#  filter(var >= 0.05) 
+data_2 <- data_2 %>%
+  clean_names()
 
-# high_var <- data.frame(variables = rownames(variance2))
+q4_predictors2 <- ncol(data_2)
 
-final_data <- data_4 %>%
-  select(-low_var[,1])
+q4 <- q4_predictors - q4_predictors2
+
+set.seed(13194)
+
+train               <- sample(seq(nrow(data_2)),
+                              floor(nrow(data_2) * 0.8))
+
+train               <- sort(train)
+
+test                <- which(!(seq(nrow(data_2)) %in% train))
 ```
 
 a.) There are 40 predictors in the data set. 
@@ -131,11 +162,161 @@ b.) 9230 observations were missing values.
 
 c.) 34 variables are categorical variables, while six are numeric. 
 
-d.) 498 variables have variance less than 0.05. 
+d.) 462 variables have variance less than 0.05. 
 
-```{r Question 2}
 
+
+```{r Question 2, echo=FALSE}
+
+set.seed(13194)
+
+
+pcr_fit <- pcr(read3~., data = data_2[train,], 
+               scale = TRUE, 
+               validation = "CV", 
+               nfold = 10)
+
+# summary(pcr_fit)
 
 
 ```
+#### 2.) 
 
+\hfill\break
+
+a.) I would not say that the model with 10 principal components shows a big improvement in CV RMSE over the model with 0 components.
+
+b.) The model with 20 principal components has a slightly lower CV RMSE than the model with 10, but only very slightly.  
+
+c.) 0 components has a CV RMSE of 36.91, 10 components has a CV RMSE of 34.64, and 20 components has a CV RMSE of 34.30. 
+
+```{r Question 3, echo=FALSE}
+
+
+pcr_msep <- MSEP(pcr_fit)
+pcr_min_indx <- which.min(pcr_msep$val[1,1,])
+# print(pcr_min_indx)
+
+q3_1 <- pcr_msep$val[1,1,pcr_min_indx]
+
+q3_b <- sqrt(q3_1)
+
+pcr_pred <- predict(pcr_fit, data_2[test,],
+                    ncomp = 38)
+
+pcr_test_MSE <- mean((pcr_pred - data_2[test,"read3"])^2)
+
+# print(pcr_test_MSE)
+
+q3_c <- (sqrt(pcr_test_MSE))
+```
+
+#### 3.) 
+
+\hfill\break
+
+a.) 39 component principled components corresponds to the lowest CV RMSE. 
+
+b.) The CV RMSE of 39 component parts is 24.944
+
+c.) The test RMSE for the test data and 38 components is 25.873. 
+
+```{r Question 4,echo=FALSE}
+
+set.seed(13194)
+
+
+pls_fit <- plsr(read3~., data = data_2[train,], 
+               scale = TRUE, 
+               validation = "CV", 
+               nfold = 10)
+
+
+pls_msep <- MSEP(pls_fit)
+pls_min_indx <- which.min(pls_msep$val[1,1,])
+# print(pls_min_indx)
+
+q4_1 <- pls_msep$val[1,1,pls_min_indx]
+
+q4_b <- sqrt(q4_1)
+
+pls_pred          <- predict(pls_fit, data_2[test,],
+                             ncomp = 38)
+
+pls_test_MSE      <- mean((pls_pred - data_2[test,"read3"])^2)
+
+# print(pls_test_MSE)
+
+q4_c <- sqrt(pls_test_MSE)
+
+```
+
+#### 4.) 
+
+\hfill\break
+
+a.) 7 component principled components corresponds to the lowest CV RMSE. 
+
+b.) The CV RMSE of 7 component parts is 24.958
+
+c.) The test RMSE for the test data and 7 components is 26.004. 
+
+```{r Question 5, echo=FALSE}
+
+set.seed(13194)
+
+tree_model <- tree(read3~., data = data_2, subset = train)
+# summary(tree_model)
+
+cv_tree_model <- cv.tree(tree_model)
+
+best_indx <- which.min(cv_tree_model$dev)
+best_size <- cv_tree_model$size[best_indx]
+```
+
+#### 5.) 
+
+\hfill\break
+
+a.) The optimal size is 5. 
+
+b.) 
+
+
+```{r Question 5 part b}
+
+plot_data <- data.frame(size = cv_tree_model$size, deviance = cv_tree_model$dev)
+
+ggplot(plot_data, aes(x = size, y = deviance)) +
+  geom_point() +
+  geom_line() +
+  labs(
+    title = "Deviance Compared to Size in the Tree Model",
+    x = "Size",
+    y = "Deviance"
+  ) +
+  theme_base()
+
+```
+
+```{r Question 5 part c, echo=FALSE}
+tree_preds <- predict(tree_model, 
+                      newdata = data_2[test,])
+
+msep_func <- function(predictions, true_vals) {
+  MSEP    <- mean((predictions - true_vals)^2)
+  return(MSEP)
+}
+
+q5_c1 <- msep_func(tree_preds, data_2[test, "read3"])
+
+q5_c <- sqrt(q5_c1)
+
+```
+
+c.) The test RMSE is 26.309
+
+
+#### 6.) 
+
+If I had to predict third grade reading scores using one of the methods tried in this problem set, I would choose PCR over PLS and decision trees because its test RMSE was the lowest of the three models. 
