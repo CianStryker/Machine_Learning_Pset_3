@@ -26,62 +26,64 @@ library(janitor)
 
 \hfill\break
 
-You should standardize your variables for Ridge, Lasso, Linear Regression, KNN, PCR, and PLS. You do not need to standardize your variables when doing a logistic regression. 
+You should standardize your variables for Ridge, Lasso, KNN, PCR, and PLS. You do not need to standardize your variables when doing a logistic or linear regression. 
 
 #### Question 2
 
 \hfill\break
 
-We can conclude that we should choose Model B because the AUC (Area Under The Curve) is higher and, generally speaking, when the AUC is higher the model is better at predicting 0s as 0s and 1s and 1s. So since model B has a higher AUC than Model A, we should choose Model B because it will have fewer false positives. 
+We cannot conclude that we should choose Model B. This is because model B's AUC (Area Under The Curve) is higher and, generally speaking, while a higher AUC indicates a model is better at predicting, it also has a higher chance for false positives. Model A has a lower AUC than Model B, which means it is further down on the ROC curve. This indicates that model A will likely produce fewer false positives than model B. We should therefore choose Model A because while it is worse at prediction overall, our primary goal is only to minimize the number of false positives and model A is better suited to this goal.  
 
 #### Question 3
 
 \hfill\break
 
-If we run a Lasso with a lambda of 0 the model is equivalent to an OLS regression. As lambda approaches infinity, however, the shrinkage penalty grows and coefficients will be reduced to zero, removing them from the model itself. 
+If we run a Lasso with a lambda of 0 the model is equivalent to an OLS regression. As lambda approaches infinity, however, the shrinkage penalty grows and all coefficients will be reduced to zero, removing them from the model itself. 
 
 #### Question 4
 
 \hfill\break
 
-When we have data where the outcome variable is strongly correlated with our predictors, Ridge and Lasso will likely outperform PCR. PCR does not take the outcome variable into account when deciding principle components so it may generate components that explain the most variance overall, but with little relationship to our outcome variable. Similarly, it may have dropped predictors that are highly correlated to the outcome variable in its first step. 
+When the number of principal components in a model is high and close to the number of features in the data set, Ridge and Lasso regressions are likely to outperform PCR. 
+
 
 #### Question 5
 
 \hfill\break
 
-Yes I would conclude that X2 will receive more weight in the PLS regression because it is more highly correlated to our outcome variable Y. PLS takes correlation of variables to the outcome variable into account when allocating weight. 
+Yes I would conclude that X2 will receive more weight in the PLS regression because it is more highly correlated to our outcome variable (Y). PLS takes the correlation of predictors to the outcome variable into account when allocating weight, therefore, x2's higher correlation to Y would indicate it will receive more weight.  
 
 #### Question 6
 
 \hfill\break
 
-No I would not necessarily conclude that X2 will receive more weight in the PCR regression. PCR does not take the relationship of variables to the outcome variable Y into account when allocating weight, therefore, just because X2 has a higher correlation to Y, PCR will not take that into account. 
+No I would not necessarily conclude that X2 will receive more weight in the PCR regression. PCR does not take the relationship of predictors to the outcome variable (Y) into account when allocating weight, therefore, even though  X2 has a higher correlation to Y, PCR will not take that into account when allocating weight. 
 
 #### Question 7
 
 \hfill\break
 
-A polynomial regression imposes a global structure to data that doesn't necessarily take into account the differences between certain parts of the data range. A step function might be more appropriate for this situation because it divides the range of data into different bins. In the situation give, we could create a bin that shows years 10-11 and 11-12 separately which may show if that 12the year really does have a significant impact. 
+A polynomial non-spline regression imposes a global structure to data that doesn't necessarily take into account the differences between certain segments of the data range. A step function might be more appropriate for this situation because it divides the range of data into different bins or k distinct regions, each with a different constant. In the situation given, we could create a bin that shows years 10-11 and 11-12 separately which may show if that 12th year really does have a significant impact. 
 
 
 #### Question 8
 
 \hfill\break
 
-The number of knots used in a regression spline is often determined by using cross validation to try different K values and then choose the number with the best scores. 
+
+When we determine how many knots or degrees of freedom to use for a regression spline we should use cross validation to try different degrees of freedom or knots (k values) and then choose the number with the lowest RSS.
 
 #### Question 9
 
 \hfill\break
 
-Natural regression splines add additional constraints that at the tails of a model the model must be linear, which decreases the variance at the tails. In polynomial regressions the variance at the tails is often very high because data is limited. Natural regression splines addresses this issue. 
+Natural regression splines add additional constraints at the tails of a model, which decrease the variance at the tails. In polynomial regressions the variance at the tails is often very high because data is limited. Natural regression splines address this issue and produces more stable estimates at the boundaries.  
 
 #### Question 10
 
 \hfill\break
 
-For smoothing splines, if the smoothing parameter is 0 the function will be very rough, but if the parameter is equal to infinite it will become very smooth. 
+For smoothing splines, if the smoothing parameter is 0 the function will be very rough, but if the parameter is equal to infinite it will become perfectly smooth. 
 
 # Data Questions
 
@@ -175,18 +177,19 @@ pcr_fit <- pcr(read3~., data = data_2[train,],
                scale = TRUE, 
                validation = "CV", 
                nfold = 10)
-
 # summary(pcr_fit)
 
+# 36.91-34.64
 
+# 34.64-34.40
 ```
 #### 2.) 
 
 \hfill\break
 
-a.) I would not say that the model with 10 principal components shows a big improvement in CV RMSE over the model with 0 components.
+a.) I would not say that the model with 10 principal components shows a big improvement in CV RMSE over the model with 0 components because the difference between the two is only 2.27
 
-b.) The model with 20 principal components has a slightly lower CV RMSE than the model with 10, but only very slightly.  
+b.) The model with 20 principal components has a slightly lower CV RMSE than the model with 10, but only 0.24 lower, which is a very small improvement.   
 
 c.) 0 components has a CV RMSE of 36.91, 10 components has a CV RMSE of 34.64, and 20 components has a CV RMSE of 34.30. 
 
@@ -202,7 +205,7 @@ q3_1 <- pcr_msep$val[1,1,pcr_min_indx]
 q3_b <- sqrt(q3_1)
 
 pcr_pred <- predict(pcr_fit, data_2[test,],
-                    ncomp = 38)
+                    ncomp = 39)
 
 pcr_test_MSE <- mean((pcr_pred - data_2[test,"read3"])^2)
 
@@ -219,7 +222,7 @@ a.) 39 component principled components corresponds to the lowest CV RMSE.
 
 b.) The CV RMSE of 39 component parts is 24.944
 
-c.) The test RMSE for the test data and 38 components is 25.873. 
+c.) The test RMSE for the test data and 38 components is 25.890. 
 
 ```{r Question 4,echo=FALSE}
 
@@ -241,7 +244,7 @@ q4_1 <- pls_msep$val[1,1,pls_min_indx]
 q4_b <- sqrt(q4_1)
 
 pls_pred          <- predict(pls_fit, data_2[test,],
-                             ncomp = 38)
+                             ncomp = 7)
 
 pls_test_MSE      <- mean((pls_pred - data_2[test,"read3"])^2)
 
@@ -259,7 +262,7 @@ a.) 7 component principled components corresponds to the lowest CV RMSE.
 
 b.) The CV RMSE of 7 component parts is 24.958
 
-c.) The test RMSE for the test data and 7 components is 26.004. 
+c.) The test RMSE for the test data and 7 components is 25.853. 
 
 ```{r Question 5, echo=FALSE}
 
@@ -291,11 +294,11 @@ ggplot(plot_data, aes(x = size, y = deviance)) +
   geom_point() +
   geom_line() +
   labs(
-    title = "Deviance Compared to Size in the Tree Model",
+    title = "Deviance Compared to Size",
     x = "Size",
     y = "Deviance"
   ) +
-  theme_base()
+  theme_classic()
 
 ```
 
@@ -319,4 +322,6 @@ c.) The test RMSE is 26.309
 
 #### 6.) 
 
-If I had to predict third grade reading scores using one of the methods tried in this problem set, I would choose PCR over PLS and decision trees because its test RMSE was the lowest of the three models. 
+\hfill\break
+
+If I had to predict third grade reading scores using one of the methods tried in this problem set, I would choose PLS over PCR or decision trees because its test RMSE was the lowest of the three models. 
